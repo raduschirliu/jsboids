@@ -4,6 +4,7 @@ export default class Sketch {
   constructor() {
     this.amount = 30;
     this.boids = [];
+    window.boids = this.boids;
   }
 
   // Initialize canvas and boids
