@@ -13,8 +13,8 @@ export default class Boid {
     this.color = p.color(20, 200, 200);
     this.angle = p.random(0, p.TWO_PI);
     this.speed = 2;
+    this.angularSpeed = 0;
     this.range = 175;
-    this.turnSpeed = p.radians(5);
     this.viewAngle = p.radians(280);
   }
 
@@ -23,17 +23,24 @@ export default class Boid {
     // Move forwards
     this.pos.add(this.forward.mult(this.speed));
 
+    // Apply spin
+    this.angle = p.lerp(this.angle, this.angularSpeed, 0.01);
+    this.angularSpeed = 0;
+
     // Teleport if moving out of screen bounds
     if (this.pos.x > p.width) this.pos.x = 0;
     if (this.pos.x < 0) this.pos.x = p.width;
     if (this.pos.y > p.height) this.pos.y = 0;
     if (this.pos.y < 0) this.pos.y = p.height;
 
-    // Avoid nearby boids
+    let closeBoids = [];
+
+    // Find nearby boids and add to list
     for (let i = 0; i < boids.length; i++) {
       if (boids[i] === this) continue;
 
       if (this.inRange(boids[i])) {
+        closeBoids.push(boids[i]);
         // Draw debug color for nearby boids
         if (this.debug) {
           boids[i].color = p.color(20, 200, 20);
@@ -42,6 +49,27 @@ export default class Boid {
       } else {
         // Remove debug color for nearby boids
         if (this.debug) boids[i].color = this.color;
+      }
+    }
+
+    // Orient self based on other boids in proximity
+    if (closeBoids.length > 0) {
+      // Spin to face other boids
+      let heading = this.averageHeading(closeBoids);
+      this.angularSpeed += heading.angleBetween(this.forward);
+
+      if (this.debug) {
+        p.line(this.pos.x, this.pos.y, this.pos.x + heading.x * 60, this.pos.y + heading.y * 60);
+      }
+
+      // Face center of mass of nearby boids
+      let com = this.centerOfMass(closeBoids);
+      
+      if (this.debug) {
+        p.fill(200, 20, 20);
+
+        p.line(this.pos.x, this.pos.y, this.pos.x + com.x * 100, this.pos.y + com.y * 100);
+        p.ellipse(this.pos.x + com.x * 100, this.pos.y + com.y * 100, 5, 5);
       }
     }
   }
@@ -82,5 +110,35 @@ export default class Boid {
     if (p.abs(this.forward.angleBetween(posVec)) > viewMax) return false;
 
     return true;
+  }
+
+  // Returns the vector for the average heading of a group of boids
+  averageHeading(group) {
+    let heading = p.createVector(0, 0);
+
+    group.forEach(boid => {
+      heading.add(boid.forward);
+    });
+
+    heading.div(group.length);
+    return heading.normalize();
+  }
+
+  // Returns the position of the center of mass of a group of nearby boids
+  centerOfMass(group) {
+    let com = p.createVector(0, 0);
+
+    group.forEach(boid => {
+      com.add(boid.pos);
+    });
+
+    com.div(group.length);
+
+    if (this.debug) {
+      p.fill(20, 20, 200);
+      p.ellipse(com.x, com.y, 5, 5);
+    }
+    
+    return com.normalize();
   }
 }
