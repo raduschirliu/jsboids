@@ -24,7 +24,7 @@ export default class Boid {
     this.pos.add(this.forward.mult(this.speed));
 
     // Apply spin
-    this.angle = p.lerp(this.angle, this.angularSpeed, 0.01);
+    this.angle = p.lerp(this.angle, this.angle + this.angularSpeed, 0.01);
     this.angularSpeed = 0;
 
     // Teleport if moving out of screen bounds
@@ -44,7 +44,7 @@ export default class Boid {
         // Draw debug color for nearby boids
         if (this.debug) {
           boids[i].color = p.color(20, 200, 20);
-          p.line(this.pos.x, this.pos.y, boids[i].pos.x, boids[i].pos.y);
+          // p.line(this.pos.x, this.pos.y, boids[i].pos.x, boids[i].pos.y);
         }
       } else {
         // Remove debug color for nearby boids
@@ -56,7 +56,7 @@ export default class Boid {
     if (closeBoids.length > 0) {
       // Spin to face other boids
       let heading = this.averageHeading(closeBoids);
-      this.angularSpeed += heading.angleBetween(this.forward);
+      this.angularSpeed -= this.calcAngle(heading);
 
       if (this.debug) {
         p.line(this.pos.x, this.pos.y, this.pos.x + heading.x * 60, this.pos.y + heading.y * 60);
@@ -64,12 +64,14 @@ export default class Boid {
 
       // Face center of mass of nearby boids
       let com = this.centerOfMass(closeBoids);
+      let comDir = p5.Vector.sub(com, this.pos);
+      this.angularSpeed -= this.calcAngle(comDir);
       
       if (this.debug) {
         p.fill(200, 20, 20);
 
-        p.line(this.pos.x, this.pos.y, this.pos.x + com.x * 100, this.pos.y + com.y * 100);
-        p.ellipse(this.pos.x + com.x * 100, this.pos.y + com.y * 100, 5, 5);
+        p.line(this.pos.x, this.pos.y, com.x, com.y);
+        p.ellipse(com.x, com.y, 5, 5);
       }
     }
   }
@@ -97,6 +99,15 @@ export default class Boid {
 
     p.ellipse(0, 0, 1, 1);
     p.pop();
+  }
+
+  // Returns signed angle difference between forward vector and another vector
+  calcAngle(vec) {
+    let ang = this.forward.heading() - vec.heading();
+    if (ang > p.PI) ang -= p.TWO_PI;
+    else if (ang < -p.PI) ang += p.TWO_PI;
+
+    return ang;
   }
 
   // Returns if another boid is in the view range and view angle
@@ -133,12 +144,6 @@ export default class Boid {
     });
 
     com.div(group.length);
-
-    if (this.debug) {
-      p.fill(20, 20, 200);
-      p.ellipse(com.x, com.y, 5, 5);
-    }
-    
-    return com.normalize();
+    return com;
   }
 }
