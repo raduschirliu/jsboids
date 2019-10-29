@@ -9,12 +9,19 @@ export default class Boid {
 
   constructor() {
     this.debug = false;
+    this.movements = {
+      separation: true,
+      alignment: true,
+      cohesion: true
+    };
+
     this.pos = p.createVector(p.random(20, p.width - 20), p.random(20, p.height - 20));
     this.color = p.color(20, 200, 200);
     this.angle = p.random(0, p.TWO_PI);
     this.speed = 2;
     this.angularSpeed = 0;
     this.range = 175;
+    this.collisionRadius = 40;
     this.viewAngle = p.radians(280);
   }
 
@@ -41,10 +48,19 @@ export default class Boid {
 
       if (this.inRange(boids[i])) {
         closeBoids.push(boids[i]);
+
+        // Avoid colliding into nearby boids
+        if (this.movements.separation) {
+          if (this.willCollide(boids[i])) {
+            let dir = p5.Vector.sub(boids[i].pos, this.pos);
+            let ang = this.calcAngle(dir);
+            this.angularSpeed += ang * 4;
+          }
+        }
+
         // Draw debug color for nearby boids
         if (this.debug) {
           boids[i].color = p.color(20, 200, 20);
-          // p.line(this.pos.x, this.pos.y, boids[i].pos.x, boids[i].pos.y);
         }
       } else {
         // Remove debug color for nearby boids
@@ -54,24 +70,28 @@ export default class Boid {
 
     // Orient self based on other boids in proximity
     if (closeBoids.length > 0) {
-      // Spin to face other boids
-      let heading = this.averageHeading(closeBoids);
-      this.angularSpeed -= this.calcAngle(heading);
+      // Spin to face the same direction as the other boids
+      if (this.movements.alignment) {
+        let heading = this.averageHeading(closeBoids);
+        this.angularSpeed -= this.calcAngle(heading);
 
-      if (this.debug) {
-        p.line(this.pos.x, this.pos.y, this.pos.x + heading.x * 60, this.pos.y + heading.y * 60);
+        if (this.debug) {
+          p.line(this.pos.x, this.pos.y, this.pos.x + heading.x * 60, this.pos.y + heading.y * 60);
+        }
       }
 
-      // Face center of mass of nearby boids
-      let com = this.centerOfMass(closeBoids);
-      let comDir = p5.Vector.sub(com, this.pos);
-      this.angularSpeed -= this.calcAngle(comDir);
-      
-      if (this.debug) {
-        p.fill(200, 20, 20);
+      // Face the center of mass of all nearby boids
+      if (this.movements.cohesion) {
+        let com = this.centerOfMass(closeBoids);
+        let comDir = p5.Vector.sub(com, this.pos);
+        this.angularSpeed -= this.calcAngle(comDir);
+        
+        if (this.debug) {
+          p.fill(200, 20, 20);
 
-        p.line(this.pos.x, this.pos.y, com.x, com.y);
-        p.ellipse(com.x, com.y, 5, 5);
+          p.line(this.pos.x, this.pos.y, com.x, com.y);
+          p.ellipse(com.x, com.y, 5, 5);
+        }
       }
     }
   }
@@ -85,7 +105,10 @@ export default class Boid {
     // Draw debug visualization for boid
     if (this.debug) {
       p.noStroke();
+      p.fill(200, 100, 20, 100);
+
       p.fill(200, 20, 20, 100);
+
       let halfBlindAngle = (p.TWO_PI - this.viewAngle) / 2;
       p.arc(0, 0, this.range * 2, this.range * 2, p.HALF_PI + halfBlindAngle, p.HALF_PI + this.viewAngle + halfBlindAngle);
       p.stroke(0);
@@ -121,6 +144,19 @@ export default class Boid {
     if (p.abs(this.forward.angleBetween(posVec)) > viewMax) return false;
 
     return true;
+  }
+
+  // Returns if the boid may collide with another boid
+  willCollide(boid) {
+    let nextPos = p5.Vector.add(this.pos, this.forward.mult(this.collisionRadius));
+    nextPos.sub(this.forward.mult(10));
+
+    if (this.debug) {
+      p.fill(200, 100, 20, 100);
+      p.ellipse(nextPos.x, nextPos.y, this.collisionRadius * 2, this.collisionRadius * 2);
+    }
+
+    return nextPos.dist(boid.pos) <= this.collisionRadius;
   }
 
   // Returns the vector for the average heading of a group of boids
