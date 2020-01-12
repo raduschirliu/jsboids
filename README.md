@@ -1,9 +1,14 @@
 # JS Boids
 
-An attempt at creating a simple boids simulation in Javascript using p5.js
+[![Netlify Status](https://api.netlify.com/api/v1/badges/a3dc7b0b-a3c2-4ba9-bca8-d0d7b2092688/deploy-status)](https://app.netlify.com/sites/rs-js-boids/deploys)  
+  
+  
+An attempt at creating a simple boids simulation in Javascript using p5.js  
+
+A build of the master branch is available _[here](https://rs-js-boids.netlify.com/)_  
 
 ### Building and Running
-To build and run the project, first clone the repo  
+To build and run the project, first clone the repo
 `git clone git@github.com:raduschirliu/jsboids`
 
 and install all dependencies through NPM  
@@ -11,3 +16,5 @@ and install all dependencies through NPM
 
 Then, it can be ran with  
 `npm start`
+
+Alternitively, a 
