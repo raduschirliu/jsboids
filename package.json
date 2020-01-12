@@ -5,7 +5,7 @@
   "main": "./src/index.js",
   "scripts": {
     "build": "cp -R public/. dist/ && webpack ./src/index.js",
-    "start": "webpack-dev-server --mode development ./src/index.js"
+    "start": "webpack-dev-server --open --mode development ./src/index.js"
   },
   "author": "",
   "license": "ISC",

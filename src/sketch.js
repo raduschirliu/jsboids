@@ -5,7 +5,7 @@ export default class Sketch {
   setup() {
     p.createCanvas(1000, 650);
     p.angleMode(p.RADIANS);
-    this.createFlock(60, 2, false);
+    this.createFlock(60, 2.5, false);
   }
 
   // Draw boids
