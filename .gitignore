@@ -1,5 +1,6 @@
 # Builds
 bundle.js
+dist/
 
 # Logs
 logs
